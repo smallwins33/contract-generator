@@ -565,8 +565,7 @@
     if (!doc) return;
     const layer = document.createElement('div');
     layer.className = 'wm-layer';
-    // 多鋪 35% 高度：PDF 避頁模式會把內容往後推、文件變長，避免尾頁沒浮水印
-    const h = doc.scrollHeight * 1.35;
+    const h = doc.scrollHeight;
     const text = `${data.n || '　　　'}專用`;
     for (let y = 120; y < h; y += 280) {
       for (let col = 0; col < 2; col++) {
