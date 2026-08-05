@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>待產暨月子中心契約書</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      background: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    .actions { margin-bottom: 24px; }
+
+    .download-btn {
+      background: #111;
+      color: #fff;
+      border: none;
+      padding: 14px 40px;
+      font-size: 15px;
+      font-family: 'Noto Sans TC', sans-serif;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 8px;
+      letter-spacing: 2px;
+      transition: background 0.2s;
+    }
+    .download-btn:hover { background: #333; }
+
+    .doc {
+      width: 180mm;
+      background: #fff;
+      padding: 10mm 12mm;
+      font-size: 13px;
+      line-height: 1.8;
+      color: #111;
+    }
+
+    .doc-title {
+      text-align: center;
+      font-size: 21px;
+      font-weight: 700;
+      letter-spacing: 8px;
+      margin-bottom: 12px;
+    }
+
+    .section-heading { font-weight: 700; margin-top: 10px; }
+
+    .indent { padding-left: 2em; }
+
+    .clause { display: flex; margin-top: 2px; }
+    .clause-no { flex-shrink: 0; width: 3.2em; }
+    .clause-body { flex: 1; }
+
+    .article { margin-top: 8px; }
+    .article-title { font-weight: 700; }
+
+    .red { color: #d0021b; }
+    .hl { background: #ffe94d; }
+
+    .val {
+      font-weight: 700;
+      border-bottom: 1px solid #111;
+      padding: 0 4px;
+      white-space: nowrap;
+    }
+    .blank {
+      display: inline-block;
+      min-width: 6em;
+      border-bottom: 1px solid #111;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 6px 0;
+    }
+    th, td {
+      border: 1px solid #333;
+      padding: 3px 6px;
+      vertical-align: middle;
+    }
+    th { font-weight: 500; background: #f4f2ec; }
+
+    .client-table td { height: 26px; }
+    .client-table .label {
+      background: #f4f2ec;
+      text-align: center;
+      white-space: nowrap;
+      width: 7.5em;
+    }
+
+    .appendix-title { font-weight: 700; margin: 14px 0 4px; }
+    .center { text-align: center; }
+
+    .sign-block { margin-top: 18px; }
+    .sign-row { margin-top: 10px; }
+    .sign-line {
+      display: inline-block;
+      min-width: 14em;
+      border-bottom: 1px solid #111;
+    }
+
+    .page-break { page-break-before: always; }
+
+    tr, .clause, .sign-row, .appendix-title { page-break-inside: avoid; }
+
+    /* 附表用：分類群組拆成獨立表格，固定欄寬對齊、整組避頁，
+       解決跨列合併格被切頁時欄位錯位的問題 */
+    .t-app { table-layout: fixed; width: 100%; margin: 6px 0 0; }
+    .t-app + .t-app { margin-top: -1px; }
+    .t-app td, .t-app th { word-wrap: break-word; }
+    .t-keep { page-break-inside: avoid; }
+
+    .doc { position: relative; }
+    .doc > *:not(.wm-layer) { position: relative; z-index: 1; }
+
+    .wm-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .wm-tile {
+      position: absolute;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: rgba(120, 120, 120, 0.10);
+      transform: rotate(-28deg);
+      white-space: nowrap;
+    }
+
+    .idphoto-section { text-align: center; }
+    .idphoto-wrap {
+      position: relative;
+      display: inline-block;
+      margin-top: 10px;
+      max-width: 130mm;
+    }
+    .idphoto-wrap img {
+      max-width: 100%;
+      display: block;
+      border: 1px solid #999;
+    }
+    .idphoto-wm {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-content: space-around;
+      justify-content: space-around;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .idphoto-wm span {
+      font-size: 20px;
+      font-weight: 700;
+      color: rgba(200, 30, 30, 0.28);
+      transform: rotate(-24deg);
+      white-space: nowrap;
+      padding: 14px 10px;
+    }
+
+    .state-error {
+      padding: 80px 0;
+      text-align: center;
+      color: #c0392b;
+      font-size: 15px;
+      width: 180mm;
+      background: #fff;
+    }
+
+    @media (max-width: 800px) {
+      .doc { width: 100%; padding: 24px 16px; }
+    }
+
+    /* 伺服器端（Gotenberg/Chrome 列印）轉 PDF 用 */
+    @media print {
+      body { background: #fff; padding: 0; display: block; }
+      .actions, .preview-banner { display: none !important; }
+      .doc { width: auto; padding: 0; margin-bottom: -6mm; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="actions" id="actions">
+    <button class="download-btn" onclick="downloadPDF()">下載 PDF</button>
+  </div>
+
+  <div class="doc" id="doc">
+
+    <div class="doc-title">待產暨月子中心契約書</div>
+
+    <div>立契約書人</div>
+    <div class="indent">甲方：EVERWYN INC.(Yoyo 月子中心)</div>
+    <div class="indent">乙方：<span data-f="n" data-w="10em"></span></div>
+    <div class="indent">丙方：創昱國際有限公司(Melody 美加生活顧問)</div>
+
+    <div>乙方客戶資料(申請醫師預約單用)</div>
+    <table class="client-table">
+      <tr>
+        <td class="label">中文姓名</td>
+        <td data-f="n"></td>
+        <td class="label" rowspan="2">備　註</td>
+        <td>第 <span class="blank" style="min-width:2em"></span> 胎．自然產/剖腹產</td>
+      </tr>
+      <tr>
+        <td class="label">護照英文姓名</td>
+        <td data-f="en"></td>
+        <td>自費醫師 <span class="blank" style="min-width:6em"></span><br>自費醫院 <span class="blank" style="min-width:6em"></span></td>
+      </tr>
+      <tr>
+        <td class="label">西元生日</td>
+        <td data-f="bd"></td>
+        <td class="label">護照號碼</td>
+        <td data-f="pp"></td>
+      </tr>
+      <tr>
+        <td class="label">通訊地址</td>
+        <td colspan="3" data-f="addr"></td>
+      </tr>
+      <tr>
+        <td class="label">電話</td>
+        <td data-f="tel"></td>
+        <td class="label">預計陪客數</td>
+        <td><span data-f="ga" data-w="2em"></span> 大　<span data-f="gc" data-w="2em"></span> 小</td>
+      </tr>
+      <tr>
+        <td class="label">E-mail</td>
+        <td colspan="3" data-f="em"></td>
+      </tr>
+      <tr>
+        <td class="label">緊急聯絡人</td>
+        <td data-f="ecn"></td>
+        <td class="label">電　話</td>
+        <td data-f="ect"></td>
+      </tr>
+    </table>
+
+    <div>茲因甲方為乙方產婦與嬰兒提供之服務，訂立本契約以茲共同遵守：</div>
+
+    <div class="article">
+      <div class="article-title">一、　入住期間與房費（以下均以美元計）</div>
+      <div class="clause"><div class="clause-no">(一)</div><div class="clause-body">乙方待產入住日期：<span data-f="d1x"></span>、待產入住天數：<span data-f="days1" data-w="3em"></span> 日（因生產住院期間均計入待產入住天數）<br>房型：<span data-f="r1" data-w="6em"></span>、每日房費：<span data-f="p1" data-w="4em"></span> 元，小計 <span data-f="sub1" data-w="5em"></span> 元</div></div>
+      <div class="clause"><div class="clause-no">(二)</div><div class="clause-body">乙方預產期：<span data-f="eddx"></span>(暫定孕期 39 週催生)、坐月子入住天數：<span data-f="days2" data-w="3em"></span> 日（生產後入住月子中心當日即起算坐月子天數）<br>房型：<span data-f="r2" data-w="6em"></span>、每日房費：<span data-f="p2" data-w="4em"></span> 元，小計 <span data-f="sub2" data-w="5em"></span> 元</div></div>
+      <div class="clause"><div class="clause-no">(三)</div><div class="clause-body">待產、坐月子期間總房費共計 <span data-f="total" data-w="6em"></span> 元。<br>（入住第一天，不論時間為何，均以整日計費，退房當日於中午 12 時之前退房者，當日不計費）</div></div>
+      <div class="clause"><div class="clause-no">(四)</div><div class="clause-body">乙方如需變更入住日期者，需於 30 日前向甲方提出申請，經甲方同意後始得變更。</div></div>
+      <div class="clause"><div class="clause-no">(五)</div><div class="clause-body">乙方如有提前生產而未住滿待產天數者，未住滿之待產入住天數不予退費，須<span class="red">以 2 日待產入住房費折抵加計 1 日坐月子房費</span>。</div></div>
+      <div class="clause"><div class="clause-no">(六)</div><div class="clause-body">乙方如有延後待產入住者，<span class="red">以 3 日為限</span>，如有逾期，甲方得解除契約並沒收定金。</div></div>
+      <div class="clause"><div class="clause-no">(七)</div><div class="clause-body">乙方因故<span class="red">未住滿坐月子日數者，甲方不予退費</span>，如有增加坐月子日數者，按約定房費加收費用。乙方亦不可以最終待產天數較合約預定天數多為由，要求減少坐月子天數、提前退房。</div></div>
+      <div class="clause"><div class="clause-no">(八)</div><div class="clause-body">甲方<span class="red">保有調度入住房型之權利</span>，升級不另收費，降級退還差額。</div></div>
+    </div>
+
+    <div class="article">
+      <div class="article-title">二、　乙方之契約終止權</div>
+      <div class="indent">乙方入住後，因健康情形不佳、疾病、死亡，或其他不可歸責於乙方之事由，致無法繼續接受甲方之服務者，乙方得終止契約，甲方應按已發生之房費與服務費用收費，如有溢收費用，應予退還。</div>
+    </div>
+
+    <div class="article">
+      <div class="article-title">三、　甲方之契約終止權</div>
+      <div class="indent">乙方入住後，如有<span class="red">可歸責於乙方之事由</span>（如同行陪客製造噪音、與其他房客有摩擦衝突，經協調仍未改善、或未按期付款等原因），<span class="red">甲方得終止契約</span>，並按已發生之房費與服務費用收費，如有溢收費用，應予退還。</div>
+      <div class="indent">如乙方或其他陪客有健康上的問題，須提前告知甲方，甲方同意後始得入住。若乙方刻意隱瞞，入住後甲方有權要求乙方或陪客出示健康報告，證明沒有傳染的疑慮，如乙方不提供，甲方得終止契約，並沒收已收取之費用，不予退還。</div>
+    </div>
+
+    <div class="article">
+      <div class="article-title">四、　收費方式</div>
+      <div class="clause"><div class="clause-no">(一)</div><div class="clause-body">定金：<br>簽立本契約之日起 3 日內，乙方應給付甲方 <span data-f="dep" data-w="5em"></span> 元，由丙方代收，訂金亦可以台幣支付，匯率以匯款當日計價。</div></div>
+      <div class="clause"><div class="clause-no">(二)</div><div class="clause-body">頭款：<br>乙方待產入住當日，應以美元現金或匯款給付 <span data-f="first" data-w="5em"></span> 元。（總房費 70%扣除定金）</div></div>
+      <div class="clause"><div class="clause-no">(三)</div><div class="clause-body">期款：<br>乙方產後入住坐月子當日，應以美元現金或匯款給付 <span data-f="second" data-w="5em"></span> 元。（總房費 30%）</div></div>
+      <div class="clause"><div class="clause-no">(四)</div><div class="clause-body">尾款：<br>乙方退房前一日，應與甲方結算附表 3 或其他服務雜項費用，多退少補。</div></div>
+    </div>
+
+    <div class="article">
+      <div class="article-title">五、　甲方房費服務內容如附表 1&amp;附表 2 所示。</div>
+    </div>
+
+    <div class="article">
+      <div class="article-title">六、　其他約定事項：</div>
+      <div class="clause"><div class="clause-no">(一)</div><div class="clause-body">約定待產入住日<span class="red">前 30 日</span>內，如有因早產、安胎、或遭海關拒絕入境等不可歸責於乙方之事由，導致未能入住甲方月子中心待產者，乙方應檢具事證供甲方查核無誤後，甲方同意退還乙方全數定金。</div></div>
+      <div class="clause"><div class="clause-no">(二)</div><div class="clause-body">約定待產入住日<span class="red">前 31 日</span>之前，乙方得檢具「黃皮行前說明書」向甲方申請提前終止契約，甲方同意返還乙方全數定金，<span class="red">乙方未檢具「黃皮行前說明書」，擇甲方將收取 100 元手續費。</span></div></div>
+      <div class="clause"><div class="clause-no">(三)</div><div class="clause-body">丙方同意擔任乙方在台期間之甲方聯絡人，代甲方轉知乙方赴美生產相關訊息諮詢及月子中心之訂房服務，乙方在赴美期間若發生任何糾紛或意外（含醫院、醫師、月子中心），丙方同意協助溝通與協調，但不負擔相關責任義務。</div></div>
+      <div class="clause"><div class="clause-no">(四)</div><div class="clause-body">甲方月子中心地址僅供乙方於醫師醫院、社安卡寄送之通訊使用，乙方承諾不得作為其他使用，如有違誤造成甲方損害，乙方應負賠償責任。</div></div>
+      <div class="clause"><div class="clause-no">(五)</div><div class="clause-body">乙方依待產或月子贈送交通部分(接送機、產檢、生產接送等)，<span class="red">如未搭乘使用，無法折現</span>。代辦證件自費亦可自理。</div></div>
+      <div class="clause"><div class="clause-no">(六)</div><div class="clause-body">甲方提供居住會所內為團體生活，有固定的作業流程，需要以照顧得到所有媽媽為主要考量。除包棟套餐外，恕無法配合指定餐點菜色、用餐時間、交通接送時間、個人生活用品…等。</div></div>
+      <div class="clause"><div class="clause-no">(七)</div><div class="clause-body">乙方如有過敏體質，應於服務開始前主動告知甲方其已知之過敏源。甲方將於合理範圍內盡力調整服務內容（包括但不限於餐飲與環境）以降低乙方發生過敏反應之風險，惟甲方不保證可完全排除過敏原，亦不對乙方因過敏反應所致之損害或衍生費用負責。前述相關費用應由乙方自行承擔。<br>乙方已主動告知之已知過敏源：<span data-f="alg" data-red="1" data-w="12em"></span></div></div>
+      <div class="clause"><div class="clause-no">(八)</div><div class="clause-body">乙方明確了解美國月子中心的服務水準不及台灣，可能因為人事異動造成服務品質不穩定的情況，當服務品質不到位時，乙方同意給予甲方時間改善。基於互信原則，甲方亦有義務盡快恢復服務品質。</div></div>
+      <div class="clause"><div class="clause-no">(九)</div><div class="clause-body">當乙方與甲方對於服務內容出現巨大的認知差異，經丙方協調仍無法解決分歧，乙方或甲方任一方均可提出解除合約。乙方須支付入住後已產生的費用，甲方亦須退回溢收之費用。若乙方有需要，丙方將協助乙方尋找新的月子中心。</div></div>
+      <div class="clause"><div class="clause-no">(十)</div><div class="clause-body">退房後房內設備及物品若有汙損、破壞的情況，乙方須照價賠償。</div></div>
+      <div class="clause"><div class="clause-no">(十一)</div><div class="clause-body">丙方僅提供保險窗口之轉介，所有承保審核、保費繳納、理賠申請及相關流程，均由保險公司或保險經紀人依相關法令與契約約定辦理，甲方及丙方不經手上述任何程序及相關費用。</div></div>
+      <div class="clause"><div class="clause-no">(十二)</div><div class="clause-body">若承保、理賠或其他事項而產生任何爭議或糾紛，均由保險公司或保險經紀人依法處理，甲方及丙方不負任何法律或財務責任。惟基於服務精神，丙方得協助乙方與相關保險窗口進行必要之溝通與協調，但此協助不構成甲方及丙方之任何保證或承擔。</div></div>
+    </div>
+
+    <div class="article">
+      <div class="article-title">七、　本契約由甲乙丙三方各執一份為憑。</div>
+    </div>
+    <div class="article">
+      <div class="article-title">八、　如因本契約涉訟時，甲乙雙方合意以<span class="red">甲方所在地為管轄法院</span>。</div>
+    </div>
+    <div class="article">
+      <div class="article-title">九、　丙方代收定金之台幣帳戶：</div>
+      <div class="indent"><span class="hl">玉山銀行 808　中山分行 0417</span><br>
+      <span class="hl">戶名：創昱國際有限公司</span><br>
+      <span class="hl">帳號：0417-940-023028</span></div>
+    </div>
+
+    <div style="margin-top:14px">（以下空白）</div>
+
+    <div class="sign-block">
+      <div>立契約書人</div>
+      <div class="sign-row">
+        甲方：EVERWYN INC.<br>
+        <span class="indent">代表人：JINGPING XU <span class="sign-line"></span>(簽名/蓋章)</span><br>
+        <span class="indent">統一編號：39-3629230</span><br>
+        <span class="indent">電話：820-6677758</span><br>
+        <span class="indent">地址：145 E DUARTE RD AA528 ARCADIA, CA 91006</span>
+      </div>
+      <div class="sign-row">
+        乙方：<span class="sign-line"></span>(簽名/蓋章)<br>
+        <span class="indent">身分證字號：<span class="sign-line"></span></span><br>
+        <span class="indent">戶籍地址：<span class="sign-line" style="min-width:22em"></span></span>
+      </div>
+      <div class="sign-row">
+        丙方：創昱國際有限公司<br>
+        <span class="indent">代表人：何少緯 <span class="sign-line"></span>(簽名/蓋章)</span><br>
+        <span class="indent">統一編號：83619486</span><br>
+        <span class="indent">電話：02-25585330</span><br>
+        <span class="indent">地址：台北市大同區南京西路 62 號 7 樓</span>
+      </div>
+      <div class="sign-row" style="display:flex; justify-content:space-between; margin-top:16px">
+        <span>西　　元</span><span>年</span><span>月</span><span>日</span>
+      </div>
+    </div>
+
+    <!-- 證件照（有提供網址才顯示） -->
+    <div id="idphotoPage" style="display:none">
+      <div class="page-break"></div>
+      <div class="idphoto-section">
+        <div class="appendix-title">乙方證件影本</div>
+        <div class="idphoto-wrap">
+          <img id="idphotoImg" alt="乙方證件照" crossorigin="anonymous">
+          <div class="idphoto-wm" id="idphotoWm"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 附表 -->
+    <div class="page-break"></div>
+    <div class="appendix-title">附表 1：房費服務內容明細表</div>
+    <table class="t-app t-keep">
+      <colgroup><col style="width:2.6em"><col style="width:4em"><col></colgroup>
+      <tr><th colspan="2">項　目</th><th>說　明</th></tr>
+    </table>
+    <table class="t-app t-keep">
+      <colgroup><col style="width:2.6em"><col style="width:4em"><col></colgroup>
+      <tr><th rowspan="9">待產</th><th rowspan="4">飲食</th><td>食材每週採購 3~4 次生鮮食材、確保新鮮。</td></tr>
+      <tr><td>午晚餐菜色數量依人數調整，基本四菜一湯，菜色可依產婦身體情況調整。(若因特殊情況，月子中心保有調整菜色、數量之權利)</td></tr>
+      <tr><td>鮮奶、果汁、點心、水果每日供應</td></tr>
+      <tr><td>生產<span class="red">住院期間</span>，若吃不慣醫院餐點，<span class="red">可以送餐入院</span>。</td></tr>
+      <tr><th rowspan="2">住房</th><td>所有房間至少配備一張雙人床、wifi 網路、空調、衣櫥</td></tr>
+      <tr><td>主臥房、兩房一衛房內皆備有專屬冰箱</td></tr>
+      <tr><th rowspan="2">清潔</th><td>房間清潔、床單換洗十天一次。</td></tr>
+      <tr><td>有洗衣機、烘衣機免費使用(衛生考量，內衣褲及襪子不可丟洗衣機，請自行清洗)</td></tr>
+      <tr><th>用品</th><td>免費提供毛巾、衛生紙、洗髮沐浴品、拖鞋、牙膏牙刷、吹風機</td></tr>
+    </table>
+    <table class="t-app t-keep">
+      <colgroup><col style="width:2.6em"><col style="width:4em"><col></colgroup>
+      <tr><th rowspan="11">月子</th><th rowspan="3">飲食</th><td>特級廚師現煮專業台式月子餐三餐為四菜一湯一甜點，下午茶及宵夜提供自製甜品。菜色可依媽媽身體恢復情況調整，公寓房型為送餐的方式供餐。</td></tr>
+      <tr><td>養肝補血養顏茶每日供應，直到月子結束</td></tr>
+      <tr><td>滋補燉品（海參、鮑魚、燕窩、魚膠），每月四次，品項依食材購買狀況輪流提供。</td></tr>
+      <tr><th rowspan="3">嬰兒</th><td>合法身份專業月嫂 <span class="red">24 小時 1：1 貼身照顧</span>。</td></tr>
+      <tr><td>寶寶衣物由月嫂手洗，媽媽衣物(不含內衣褲)代放洗衣機清洗。</td></tr>
+      <tr><td>贈送新生兒用品(紙尿片 NB、1 號各一箱、溼紙巾 1 盒、連身衣 2 套、洗沐浴組 1 套、口水巾*1、包巾*1、奶嘴*1、嬰兒專用洗衣精*1、奶瓶刷*1、奶瓶清潔劑*1、凡士林*1)，若有指定品牌或想增加數量需另自購。</td></tr>
+      <tr><th rowspan="3">住房</th><td>所有房間至少配備一張雙人床、wifi 網路、空調、衣櫥</td></tr>
+      <tr><td>提供電熱水壺和消毒鍋。</td></tr>
+      <tr><td>主臥房、兩房一衛房內皆備有專屬冰箱</td></tr>
+      <tr><th>清潔</th><td>基本房間清潔每週一次、床單換洗每週一次。媽媽哺乳衣、寶寶衣物可由保母直接手洗。</td></tr>
+      <tr><th>用品</th><td>免費提供毛巾、衛生紙、洗髮沐浴品、拖鞋、牙膏牙刷、吹風機</td></tr>
+    </table>
+    <table class="t-app t-keep">
+      <colgroup><col style="width:2.6em"><col style="width:4em"><col></colgroup>
+      <tr><th rowspan="3" colspan="2">其他</th><td>提供去風排毒水(泡腳+擦澡)，每月四次。</td></tr>
+      <tr><td>月子住滿 <span class="red">21 日</span>舉辦回國 party。</td></tr>
+      <tr><td>月子期間可協助外聘產後護理課程(乳房護理、子宮修復、盆底肌修復、腹直肌修復、肩頸舒緩、滿月發汗、卵巢保養…等)，費用自付一次約$300，依當場服務項目組合報價為主。</td></tr>
+    </table>
+
+    <div class="appendix-title">附表 2：房型收費標準</div>
+    <table>
+      <tr><th style="width:6em">房型</th><th>主臥房</th><th>兩房一衛</th><th>聯排別墅<br>一房一廳大主臥</th><th>聯排別墅主臥</th></tr>
+      <tr><td class="center">待產每日</td><td class="center">310</td><td class="center">310</td><td class="center">360</td><td class="center">360</td></tr>
+      <tr><td class="center">月子每日</td><td class="center">610</td><td class="center">610</td><td class="center">660</td><td class="center">660</td></tr>
+    </table>
+
+    <div class="appendix-title">附表 3：交通、陪客與代辦服務費用一欄表（配合月子中心排定行程與採購計畫）</div>
+    <table class="t-app t-keep">
+      <colgroup><col style="width:2.6em"><col style="width:6.4em"><col style="width:7em"><col></colgroup>
+      <tr><th colspan="2">項　目</th><th>費　用</th><th>備　註</th></tr>
+      <tr><td colspan="2">証照代辦(外包)</td><td class="center">500</td><td>代辦所有寶寶證件的服務費，但不包含政府規費及攝影費用，實際費用以現場報價為主</td></tr>
+    </table>
+    <table class="t-app t-keep">
+      <colgroup><col style="width:2.6em"><col style="width:6.4em"><col style="width:7em"><col></colgroup>
+      <tr><th rowspan="5">交通費</th><td>接送機</td><td class="center">免費</td><td>孕產婦免費限一車，接機送機各一趟(親友同車免費，未使用不可退費。僅坐月子則免費送機一趟)<br>額外機場(LAX 或 ONT)接送，單次$100</td></tr>
+      <tr><td>產檢</td><td class="center">免費</td><td><span class="red">自費醫療相關的接送不限次數免費接送，若有空位親友可同車。</span>非自費醫療的媽媽，如因當週產檢次數多於二次以上，月子中心無法接送者，會協助聯繫 Uber。<br><span class="red">*Uber 車資補貼之規定請洽保險經紀人。</span></td></tr>
+      <tr><td>生產/回診</td><td class="center">免費</td><td>生產及出院，免費接送各一次(寶寶健康檢查 1 次/週)<br>單坐月子者出院接送前往月子中心一次。</td></tr>
+      <tr><td>觀光/購物</td><td class="center">免費</td><td>每週 2 次近程外出，每月 1 次遠程外出，時間及地點可與月子中心討論</td></tr>
+      <tr><td>其他</td><td class="center">100</td><td>單獨外出用車、領取證件，單次計費(距離過遠會另外加價)</td></tr>
+    </table>
+    <table class="t-app">
+      <colgroup><col style="width:2.6em"><col style="width:6.4em"><col style="width:7em"><col></colgroup>
+      <tr><td colspan="2">陪　客</td><td class="center">60/30</td><td>大人$60/天、8 歲以下$30/天。陪客費用將於入住時收取該月費用，按月收取(只要當天有用餐或過夜，就會收費)</td></tr>
+      <tr><td colspan="2">其他</td><td colspan="2">若須醫師預約單，價格依醫師報價收費，若診所距離月子中心過遠將另收交通費<br>雙胞胎每日加收$200 月嫂費用 (月嫂小費每日加收$40)<br>阿姨醫院陪產，$300/天<br>男寶寶割包皮護理，$300/月<br>大寶幼兒園接送，$10/次<br>月嫂陪同送機：$100/次</td></tr>
+      <tr><td colspan="2">小費</td><td colspan="2">廚師：待產期間每日$10，月子期間每日$15，請於入住時先支付當月小費。<br>月嫂：專業月嫂每日$30，月子開始時先支付當月小費。</td></tr>
+    </table>
+
+  </div>
+
+<script>
+  const p = new URLSearchParams(window.location.search);
+  function d(val) { try { return decodeURIComponent(val || ''); } catch(e) { return val || ''; } }
+  function num(key) { const v = Number(p.get(key)); return isNaN(v) ? 0 : v; }
+
+  const data = {
+    n: d(p.get('n')), en: d(p.get('en')), bd: p.get('bd') || '', pp: d(p.get('pp')),
+    addr: d(p.get('addr')), tel: d(p.get('tel')), em: d(p.get('em')),
+    ga: p.get('ga') || '', gc: p.get('gc') || '',
+    ecn: d(p.get('ecn')), ect: d(p.get('ect')),
+    d1: p.get('d1') || '', days1: num('days1'), r1: d(p.get('r1')), p1: num('p1'),
+    edd: p.get('edd') || '', d2: p.get('d2') || '', days2: num('days2'), r2: d(p.get('r2')), p2: num('p2'),
+    dep: num('dep'),
+    img: d(p.get('img')),
+    alg: d(p.get('alg')),
+  };
+
+  // 驗證碼：與 Charlie 版及 n8n 端共用相同算式
+  function computeChecksum() {
+    const total = data.days1 * data.p1 + data.days2 * data.p2;
+    return (total * 6271 + data.days1 * 7919 + data.days2 * 3571 + data.n.length * 2137 + data.dep * 97) % 100000;
+  }
+
+  const urlChecksum = p.get('v');
+  if (urlChecksum === null || urlChecksum === '') {
+    // 預覽模式：不帶 v 參數可直接檢視範本，但明顯標示未驗證
+    const banner = document.createElement('div');
+    banner.className = 'preview-banner';
+    banner.textContent = '⚠ 範本預覽模式（此頁未經驗證，不可作為正式合約）';
+    banner.style.cssText = 'width:180mm;background:#c0392b;color:#fff;text-align:center;padding:8px 0;font-size:13px;margin-bottom:12px;';
+    document.getElementById('doc').before(banner);
+  } else if (Number(urlChecksum) !== computeChecksum()) {
+    document.getElementById('doc').outerHTML =
+      '<div class="state-error">此合約連結無法驗證，可能已被竄改，請重新從系統取得連結。</div>';
+    document.getElementById('actions').style.display = 'none';
+    throw new Error('驗證失敗');
+  }
+
+  function fmtDate(str) {
+    if (!str) return '';
+    const dt = new Date(str + 'T00:00:00');
+    if (isNaN(dt)) return str;
+    return `${dt.getFullYear()} 年 ${dt.getMonth() + 1} 月 ${dt.getDate()} 日`;
+  }
+
+  function fmtMoney(v) { return v ? v.toLocaleString('zh-TW') : ''; }
+
+  // 衍生值（Yoyo 版：頭款 70% 扣定金、期款 30%）
+  const sub1 = data.days1 * data.p1;
+  const sub2 = data.days2 * data.p2;
+  const total = sub1 + sub2;
+  const derived = {
+    d1x: fmtDate(data.d1), eddx: fmtDate(data.edd),
+    sub1: fmtMoney(sub1), sub2: fmtMoney(sub2), total: fmtMoney(total),
+    first: fmtMoney(total > 0 ? Math.round(total * 0.7 - data.dep) : 0),
+    second: fmtMoney(total > 0 ? Math.round(total * 0.3) : 0),
+    p1: fmtMoney(data.p1), p2: fmtMoney(data.p2),
+  };
+
+  // 填入：有值顯示值，空值顯示手填空格
+  document.querySelectorAll('[data-f]').forEach(el => {
+    const key = el.getAttribute('data-f');
+    let val = (key in derived) ? derived[key] : data[key];
+    if (key === 'bd' && val) val = val.replace(/-/g, ' / ');
+    if (val !== '' && val !== null && val !== undefined && val !== '0') {
+      el.textContent = val;
+      if (el.tagName === 'SPAN') el.classList.add('val');
+      if (el.getAttribute('data-red')) el.classList.add('red');
+    } else {
+      if (el.tagName === 'SPAN') {
+        el.classList.add('blank');
+        if (el.getAttribute('data-w')) el.style.minWidth = el.getAttribute('data-w');
+      } else {
+        el.innerHTML = '&nbsp;';
+      }
+    }
+  });
+
+  // 證件照頁：有網址才顯示，圖上壓姓名浮水印
+  if (data.img) {
+    document.getElementById('idphotoPage').style.display = 'block';
+    document.getElementById('idphotoImg').src = data.img;
+    const wmText = `${data.n || ''}專用`;
+    const idWm = document.getElementById('idphotoWm');
+    for (let i = 0; i < 9; i++) {
+      const s = document.createElement('span');
+      s.textContent = wmText;
+      idWm.appendChild(s);
+    }
+  }
+
+  // 全頁浮水印：「（客戶名稱）專用」鋪滿整份文件，每頁都會出現
+  window.addEventListener('load', () => {
+    const doc = document.getElementById('doc');
+    if (!doc) return;
+    const layer = document.createElement('div');
+    layer.className = 'wm-layer';
+    const h = doc.scrollHeight;
+    const text = `${data.n || '　　　'}專用`;
+    for (let y = 120; y < h; y += 280) {
+      for (let col = 0; col < 2; col++) {
+        const tile = document.createElement('span');
+        tile.className = 'wm-tile';
+        tile.textContent = text;
+        tile.style.top = `${y + (col * 140)}px`;
+        tile.style.left = col === 0 ? '8%' : '48%';
+        layer.appendChild(tile);
+      }
+    }
+    doc.prepend(layer);
+  });
+
+  document.title = `待產暨月子中心契約書_${data.n || '未填姓名'}`;
+
+  function downloadPDF() {
+    const btn = document.querySelector('.download-btn');
+    btn.textContent = '產生中⋯';
+    btn.disabled = true;
+
+    const opt = {
+      margin: 12,
+      filename: `Yoyo訂房合約_${data.n || '未填姓名'}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'] },
+    };
+
+    html2pdf().set(opt).from(document.getElementById('doc')).save().then(() => {
+      btn.textContent = '下載 PDF';
+      btn.disabled = false;
+    });
+  }
+</script>
+</body>
+</html>
