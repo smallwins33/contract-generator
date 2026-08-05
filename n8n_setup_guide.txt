@@ -64,8 +64,8 @@ Notion 合約產生器：n8n 設定指南（測試版）
   2. 模板網址目前在你的 GitHub Pages（公開）。網址參數帶個資
      但不會被儲存；若客戶在意模板公開，正式版改部署到
      客戶的 GitHub／Cloudflare。
-  3. Yoyo 版模板（contract_yoyo.html）做好上傳後，
-     「合約方案」選 Yoyo 就會自動套用，workflow 不用改。
+  3. Yoyo 版模板已上線（contract_yoyo.html），「合約方案」
+     選 Charlie / Yoyo 即自動套用對應版本，workflow 不用改。
 
 ■ 交接給客戶（測試成功後）
 
