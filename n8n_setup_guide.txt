@@ -12,6 +12,13 @@ Notion 合約產生器：n8n 設定指南（測試版）
   4. 已驗證：Gotenberg demo 能把模板網址轉成正確的 8 頁 PDF
      （成品在 Claude/output/contract_gotenberg_test.pdf）
 
+■ 2026-08-06 更新：已改為按鈕 webhook 版（即按即跑）
+
+  觸發方式：Notion 資料庫的「按鈕」欄位 → Send webhook 動作
+  → 打到 n8n 的 /webhook/contract-generate → 幾秒內完成。
+  按鈕設定步驟見文末【按鈕設定】。輪詢版說明僅供參考。
+  注意：webhook 按鈕動作需 Notion 付費方案。
+
 ■ 設定步驟（約 15 分鐘）
 
 【一、建 Notion Integration】
@@ -73,3 +80,15 @@ Notion 合約產生器：n8n 設定指南（測試版）
   5. 客戶 n8n 若是自架：docker 加開 gotenberg/gotenberg 容器，
      網址填 http://gotenberg:3000/forms/chromium/convert/url，
      全程零月費、個資不出他們的伺服器
+
+■ 按鈕設定（在合約資料庫做一次）
+
+  1. 資料庫「＋」新增欄位 → 類型「按鈕」→ 名稱「🖨 產生合約」
+  2. 按鈕動作選「Send webhook」→ URL 填：
+     https://n8n-miyavi.zeabur.app/webhook/contract-generate
+     （交接後改成客戶 n8n 的網址，路徑同 /webhook/contract-generate）
+  3. 存檔。填好資料按一下按鈕，幾秒內「合約 PDF」出現
+  ※ 按鈕按下時 Notion 會把該列頁面資料 POST 給 n8n，
+     workflow 從 payload 取頁面 id 再抓完整資料，
+     所以按鈕不需要任何其他動作
+  ※ 舊的「產生合約」勾選欄位已移除，輪詢觸發器已停用
