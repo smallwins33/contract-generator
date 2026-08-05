@@ -3,38 +3,24 @@
   "nodes": [
     {
       "parameters": {
-        "httpMethod": "POST",
-        "path": "contract-generate",
-        "options": {}
-      },
-      "name": "按鈕 Webhook",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2,
-      "position": [
-        -880,
-        0
-      ],
-      "webhookId": "f404e8ed-eaba-48dc-95c9-5c71a1a861f2"
-    },
-    {
-      "parameters": {
-        "url": "=https://api.notion.com/v1/pages/{{ $json.body?.data?.id || $json.body?.page?.id || $json.body?.id }}",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "notionApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
+        "event": "pagedUpdatedInDatabase",
+        "databaseId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "3b336674-fccb-80cd-80d9-c67a1e2ea041"
+        },
+        "pollTimes": {
+          "item": [
             {
-              "name": "Notion-Version",
-              "value": "2022-06-28"
+              "mode": "everyMinute"
             }
           ]
         },
-        "options": {}
+        "simple": false
       },
-      "name": "抓頁面資料",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
+      "name": "Notion 觸發",
+      "type": "n8n-nodes-base.notionTrigger",
+      "typeVersion": 1,
       "position": [
         -660,
         0
@@ -42,7 +28,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// 讀取 Notion 頁面屬性，檢查觸發條件，組出合約網址\nconst BASE = 'https://smallwins33.github.io/contract-generator/'; // 模板位置，交接時改成客戶的網址\nconst TEMPLATES = { 'Charlie': 'contract.html', 'Yoyo': 'contract_yoyo.html' };\n\nconst out = [];\nfor (const item of $input.all()) {\n  const page = item.json;\n  const p = page.properties;\n  if (!p) continue;\n\n  const t = rt => (rt || []).map(x => x.plain_text).join('');\n  const num = x => x?.number ?? 0;\n  const date = x => x?.date?.start || '';\n\n  const name = t(p['中文姓名']?.title);\n  const days1 = num(p['待產天數']), p1 = num(p['待產每日房費']);\n  const days2 = num(p['月子天數']), p2 = num(p['月子每日房費']);\n  const dep = num(p['定金']);\n  const total = days1 * p1 + days2 * p2;\n  const v = (total * 6271 + days1 * 7919 + days2 * 3571 + name.length * 2137 + dep * 97) % 100000;\n\n  const photo = p['證件照']?.files?.[0];\n  const imgUrl = photo ? (photo.file?.url || photo.external?.url || '') : '';\n\n  const qobj = {\n    n: name,\n    en: t(p['護照英文姓名']?.rich_text),\n    bd: date(p['西元生日']),\n    pp: t(p['護照號碼']?.rich_text),\n    addr: t(p['通訊地址']?.rich_text),\n    tel: p['電話']?.phone_number || '',\n    em: p['Email']?.email || '',\n    ga: p['陪客-大']?.number ?? '',\n    gc: p['陪客-小']?.number ?? '',\n    ecn: t(p['緊急聯絡人']?.rich_text),\n    ect: t(p['緊急聯絡人電話']?.rich_text),\n    alg: t(p['過敏原']?.rich_text),\n    d1: date(p['待產入住日期']),\n    days1, r1: p['待產房型']?.select?.name || '', p1,\n    edd: date(p['預產期']),\n    d2: date(p['月子入住日期']),\n    days2, r2: p['月子房型']?.select?.name || '', p2,\n    dep, img: imgUrl, v,\n  };\n  const qs = Object.entries(qobj).map(([k, val]) => k + '=' + encodeURIComponent(String(val ?? ''))).join('&');\n\n  const plan = p['合約方案']?.select?.name || 'Charlie';\n  const tmpl = TEMPLATES[plan] || TEMPLATES['Charlie'];\n\n  out.push({ json: {\n    pageId: page.id,\n    url: BASE + tmpl + '?' + qs,\n    filename: `${plan}訂房合約_${name || '未命名'}.pdf`,\n  }});\n}\nreturn out;"
+        "jsCode": "// 讀取 Notion 頁面屬性，檢查觸發條件，組出合約網址\nconst BASE = 'https://smallwins33.github.io/contract-generator/'; // 模板位置，交接時改成客戶的網址\nconst TEMPLATES = { 'Charlie': 'contract.html', 'Yoyo': 'contract_yoyo.html' };\n\nconst out = [];\nfor (const item of $input.all()) {\n  const page = item.json;\n  const p = page.properties;\n  if (!p) continue;\n  if (!p['產生合約']?.checkbox) continue;\n\n  const t = rt => (rt || []).map(x => x.plain_text).join('');\n  const num = x => x?.number ?? 0;\n  const date = x => x?.date?.start || '';\n\n  const name = t(p['中文姓名']?.title);\n  const days1 = num(p['待產天數']), p1 = num(p['待產每日房費']);\n  const days2 = num(p['月子天數']), p2 = num(p['月子每日房費']);\n  const dep = num(p['定金']);\n  const total = days1 * p1 + days2 * p2;\n  const v = (total * 6271 + days1 * 7919 + days2 * 3571 + name.length * 2137 + dep * 97) % 100000;\n\n  const photo = p['證件照']?.files?.[0];\n  const imgUrl = photo ? (photo.file?.url || photo.external?.url || '') : '';\n\n  const qobj = {\n    n: name,\n    en: t(p['護照英文姓名']?.rich_text),\n    bd: date(p['西元生日']),\n    pp: t(p['護照號碼']?.rich_text),\n    addr: t(p['通訊地址']?.rich_text),\n    tel: p['電話']?.phone_number || '',\n    em: p['Email']?.email || '',\n    ga: p['陪客-大']?.number ?? '',\n    gc: p['陪客-小']?.number ?? '',\n    ecn: t(p['緊急聯絡人']?.rich_text),\n    ect: t(p['緊急聯絡人電話']?.rich_text),\n    alg: t(p['過敏原']?.rich_text),\n    d1: date(p['待產入住日期']),\n    days1, r1: p['待產房型']?.select?.name || '', p1,\n    edd: date(p['預產期']),\n    d2: date(p['月子入住日期']),\n    days2, r2: p['月子房型']?.select?.name || '', p2,\n    dep, img: imgUrl, v,\n  };\n  const qs = Object.entries(qobj).map(([k, val]) => k + '=' + encodeURIComponent(String(val ?? ''))).join('&');\n\n  const plan = p['合約方案']?.select?.name || 'Charlie';\n  const tmpl = TEMPLATES[plan] || TEMPLATES['Charlie'];\n\n  out.push({ json: {\n    pageId: page.id,\n    url: BASE + tmpl + '?' + qs,\n    filename: `${plan}訂房合約_${name || '未命名'}.pdf`,\n  }});\n}\nreturn out;"
       },
       "name": "組合約網址",
       "type": "n8n-nodes-base.code",
@@ -196,7 +182,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ properties: { '合約 PDF': { files: [ { type: 'file_upload', file_upload: { id: $('上傳 PDF 到 Notion').item.json.id }, name: $('組合約網址').item.json.filename } ] }, '合約狀態': { select: { name: '已產生' } } } }) }}",
+        "jsonBody": "={{ JSON.stringify({ properties: { '合約 PDF': { files: [ { type: 'file_upload', file_upload: { id: $('上傳 PDF 到 Notion').item.json.id }, name: $('組合約網址').item.json.filename } ] }, '產生合約': { checkbox: false }, '合約狀態': { select: { name: '已產生' } } } }) }}",
         "options": {}
       },
       "name": "回寫 Notion 頁面",
@@ -253,18 +239,7 @@
         ]
       ]
     },
-    "按鈕 Webhook": {
-      "main": [
-        [
-          {
-            "node": "抓頁面資料",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "抓頁面資料": {
+    "Notion 觸發": {
       "main": [
         [
           {
