@@ -1,0 +1,75 @@
+═══════════════════════════════════════════
+Notion 合約產生器：n8n 設定指南（測試版）
+═══════════════════════════════════════════
+
+■ 已備妥的元件
+
+  1. 合約模板（已上線）
+     https://smallwins33.github.io/contract-generator/contract.html
+  2. Notion 測試資料庫「合約資料庫（測試）」
+     （在你的 Notion 私人區，欄位已建好）
+  3. workflow 檔：n8n_workflow_contract.json（本資料夾）
+  4. 已驗證：Gotenberg demo 能把模板網址轉成正確的 8 頁 PDF
+     （成品在 Claude/output/contract_gotenberg_test.pdf）
+
+■ 設定步驟（約 15 分鐘）
+
+【一、建 Notion Integration】
+  1. 開 https://www.notion.so/profile/integrations
+  2. New integration → 名稱隨意（例：合約產生器）→ 選你的 workspace
+  3. 複製 Internal Integration Secret（token）
+
+【二、把資料庫分享給 Integration】
+  1. 開「合約資料庫（測試）」頁面
+  2. 右上 ⋯ → 連接（Connections）→ 搜尋你剛建的 integration → 加入
+  ※ 沒做這步 n8n 會讀不到資料庫
+
+【三、n8n 匯入與設定】
+  1. n8n → Credentials → Add credential → Notion API → 貼上 token
+  2. Workflows → 右上 ⋯ → Import from File → 選 n8n_workflow_contract.json
+  3. 點開「Notion 觸發」節點：
+     - Credential 選剛建的
+     - Event 確認是 Page Updated in Database（若空白就下拉選）
+     - Database 下拉選「合約資料庫（測試）」
+  4. 點開「建立 Notion 檔案上傳」「上傳 PDF 到 Notion」
+     「回寫 Notion 頁面」三個節點，Credential 都選同一個
+  5. Save → 右上開關 Activate
+
+【四、測試】
+  1. 資料庫新增一列，填假資料：
+     中文姓名=王小美、待產入住日期=2026-09-01、待產天數=14、
+     待產房型=主臥房、待產每日房費=399、預產期=2026-09-15、
+     月子入住日期=2026-09-18、月子天數=30、月子房型=主臥房、
+     月子每日房費=699、定金=3000、合約方案=Charlie、
+     證件照=隨便傳一張圖
+  2. 勾「產生合約」
+  3. 等最多 1 分鐘（觸發器每分鐘檢查一次）
+  4. 成功的樣子：「合約 PDF」欄出現 PDF 檔、
+     「產生合約」的勾自動取消、「合約狀態」變成「已產生」
+
+■ 重要注意事項
+
+  1. ⚠ demo.gotenberg.dev 只能拿來測試：
+     - 有流量限制（每秒 2 次、5MB）
+     - 是第三方伺服器，合約網址（含個資）會經過它
+     → 測試一律用假資料；正式上線前把「轉成 PDF」節點的
+       網址換成客戶自架的 Gotenberg 或付費 PDF API
+  2. 模板網址目前在你的 GitHub Pages（公開）。網址參數帶個資
+     但不會被儲存；若客戶在意模板公開，正式版改部署到
+     客戶的 GitHub／Cloudflare。
+  3. Yoyo 版模板（contract_yoyo.html）做好上傳後，
+     「合約方案」選 Yoyo 就會自動套用，workflow 不用改。
+
+■ 交接給客戶（測試成功後）
+
+  1. 資料庫：「合約資料庫（測試）」→ 右上 ⋯ → Duplicate 到
+     客戶 workspace（或做成範本分享）；欄位名稱不可改
+  2. workflow：n8n → Export → 給客戶匯入他的 n8n
+  3. 客戶端要重做的：自己的 Notion integration token（步驟一二）、
+     n8n credential、觸發節點重選他的資料庫
+  4. 要改的設定：
+     - 「組合約網址」Code 節點開頭的 BASE（若模板搬到客戶的網域）
+     - 「轉成 PDF」節點的網址（換成正式的轉換器）
+  5. 客戶 n8n 若是自架：docker 加開 gotenberg/gotenberg 容器，
+     網址填 http://gotenberg:3000/forms/chromium/convert/url，
+     全程零月費、個資不出他們的伺服器
