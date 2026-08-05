@@ -50,7 +50,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const res = $input.first().json.results || [];\nreturn res.map(pg => ({ json: { id: pg.id } }));"
+        "jsCode": "// 防重複：10 秒內認領過的頁面不再送（擋 Notion 查詢索引延遲與連點）\nconst sd = $getWorkflowStaticData('global');\nsd.claimed = sd.claimed || {};\nconst now = Date.now();\nfor (const k of Object.keys(sd.claimed)) if (now - sd.claimed[k] > 10000) delete sd.claimed[k];\nconst res = $input.first().json.results || [];\nconst out = [];\nfor (const pg of res) {\n  if (sd.claimed[pg.id]) continue;\n  sd.claimed[pg.id] = now;\n  out.push({ json: { id: pg.id } });\n}\nreturn out;"
       },
       "name": "攤平",
       "type": "n8n-nodes-base.code",
