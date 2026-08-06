@@ -426,7 +426,8 @@
 
 <script>
   const p = new URLSearchParams(window.location.search);
-  function d(val) { try { return decodeURIComponent(val || ''); } catch(e) { return val || ''; } }
+  // URLSearchParams 已解碼一次，不可再 decodeURIComponent（會弄壞帶簽名的檔案網址）
+  function d(val) { return val || ''; }
   function num(key) { const v = Number(p.get(key)); return isNaN(v) ? 0 : v; }
 
   const data = {
@@ -505,7 +506,10 @@
   // 證件照頁：有網址才顯示，圖上壓姓名浮水印
   if (data.img) {
     document.getElementById('idphotoPage').style.display = 'block';
-    document.getElementById('idphotoImg').src = data.img;
+    const idImg = document.getElementById('idphotoImg');
+    // 先帶 crossorigin 載入（瀏覽器下載 PDF 需要）；來源不支援跨域時退回一般載入（列印模式不需跨域）
+    idImg.onerror = () => { idImg.onerror = null; idImg.removeAttribute('crossorigin'); idImg.src = data.img; };
+    idImg.src = data.img;
     const wmText = `${data.n || ''}專用`;
     const idWm = document.getElementById('idphotoWm');
     for (let i = 0; i < 9; i++) {
