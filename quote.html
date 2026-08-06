@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>費用報價單</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      background: #efece6;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    .actions { margin-bottom: 24px; }
+    .download-btn {
+      background: #a8834f;
+      color: #fff;
+      border: none;
+      padding: 14px 40px;
+      font-size: 15px;
+      font-family: 'Noto Sans TC', sans-serif;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 8px;
+      letter-spacing: 2px;
+      transition: background 0.2s;
+    }
+    .download-btn:hover { background: #8f6d3d; }
+
+    .doc {
+      width: 180mm;
+      background: #fffdf8;
+      font-size: 13px;
+      line-height: 1.7;
+      color: #3a3a3a;
+      position: relative;
+    }
+    .doc > *:not(.wm-layer) { position: relative; z-index: 1; }
+
+    .head {
+      background: linear-gradient(135deg, #b3905c, #a8834f);
+      color: #fff;
+      text-align: center;
+      padding: 22px 0 18px;
+    }
+    .head .title { font-size: 22px; font-weight: 700; letter-spacing: 10px; text-indent: 10px; }
+    .head .brand { font-size: 11px; letter-spacing: 3px; opacity: .85; margin-top: 4px; }
+
+    .body-pad { padding: 8mm 10mm 10mm; }
+
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-bottom: 2px solid #b3905c;
+      padding-bottom: 8px;
+      margin-bottom: 4px;
+    }
+    .meta .client { font-size: 16px; font-weight: 700; }
+    .meta .client .name { border-bottom: 1px solid #3a3a3a; padding: 0 6px; }
+    .meta .date { font-size: 12px; color: #8a8177; }
+
+    table { border-collapse: collapse; width: 100%; }
+    .items th {
+      text-align: left;
+      font-weight: 700;
+      color: #8f6d3d;
+      padding: 8px 6px 6px;
+      border-bottom: 1.5px solid #d9c9a8;
+      font-size: 12.5px;
+    }
+    .items th.fee, .items td.fee { text-align: right; white-space: nowrap; }
+    .items td {
+      padding: 9px 6px;
+      border-bottom: 1px solid #eee4d2;
+      vertical-align: top;
+    }
+    .items td.item { font-weight: 700; white-space: nowrap; width: 6.5em; }
+    .items td.fee { font-weight: 700; width: 7em; }
+    .detail-main { font-weight: 500; }
+    .detail-note { font-size: 11.5px; color: #9b8f80; margin-top: 2px; line-height: 1.55; }
+
+    .totals td { padding: 10px 6px; border-bottom: none; }
+    .totals .t-label { font-weight: 700; letter-spacing: 2px; }
+    .totals .t-usd { border-top: 2px solid #b3905c; background: #f7f1e3; }
+    .totals .t-usd .fee { font-size: 16px; color: #8f6d3d; }
+    .totals .t-twd { background: #f2e8d5; }
+    .totals .t-twd .fee { font-size: 16px; color: #a04d2c; }
+    .totals .fx-note { font-size: 11.5px; color: #9b8f80; font-weight: 400; }
+
+    .quote-note {
+      margin-top: 10px;
+      background: #f7f1e3;
+      border-left: 3px solid #b3905c;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: #6d6357;
+    }
+
+    .foot {
+      margin-top: 14px;
+      padding-top: 8px;
+      border-top: 1px dashed #d9c9a8;
+      font-size: 11.5px;
+      color: #9b8f80;
+      line-height: 1.7;
+    }
+
+    tr { page-break-inside: avoid; }
+
+    .wm-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .wm-tile {
+      position: absolute;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: rgba(150, 125, 85, 0.09);
+      transform: rotate(-28deg);
+      white-space: nowrap;
+    }
+
+    .state-error {
+      padding: 80px 0;
+      text-align: center;
+      color: #c0392b;
+      font-size: 15px;
+      width: 180mm;
+      background: #fff;
+    }
+
+    @media (max-width: 800px) {
+      .doc { width: 100%; }
+    }
+
+    /* 伺服器端（Gotenberg/Chrome 列印）轉 PDF 用 */
+    @media print {
+      body { background: #fff; padding: 0; display: block; }
+      .actions, .preview-banner { display: none !important; }
+      .doc { width: auto; margin-bottom: -6mm; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="actions" id="actions">
+    <button class="download-btn" onclick="downloadPDF()">下載 PDF</button>
+  </div>
+
+  <div class="doc" id="doc">
+    <div class="head">
+      <div class="title">費用報價單</div>
+      <div class="brand">Melody's US &amp; CA Life</div>
+    </div>
+
+    <div class="body-pad">
+      <div class="meta">
+        <div class="client">客戶姓名：<span class="name" id="clientName"></span></div>
+        <div class="date" id="quoteDate"></div>
+      </div>
+
+      <table class="items">
+        <tr><th style="width:6.5em">項　目</th><th>詳　情</th><th class="fee">費用（美元）</th></tr>
+        <tbody id="rows"></tbody>
+        <tbody class="totals">
+          <tr class="t-usd"><td class="t-label">總計（美元）</td><td></td><td class="fee" id="totalUsd"></td></tr>
+          <tr class="t-twd" id="twdRow"><td class="t-label">總計（台幣）</td><td class="fx-note" id="fxNote"></td><td class="fee" id="totalTwd"></td></tr>
+        </tbody>
+      </table>
+
+      <div class="quote-note" id="quoteNote" style="display:none"></div>
+
+      <div class="foot">
+        ＊醫療費用以現場報價為準，上述費用未包含機票。<br>
+        ＊本報價單僅供參考，實際服務內容與費用以正式合約為準。
+      </div>
+    </div>
+  </div>
+
+<script>
+  const p = new URLSearchParams(window.location.search);
+  // URLSearchParams 已解碼一次，不可再 decodeURIComponent
+  function d(val) { return val || ''; }
+  function num(key) { const v = Number(p.get(key)); return isNaN(v) ? 0 : v; }
+
+  const data = {
+    n: d(p.get('n')), ct: d(p.get('ct')),
+    r1: d(p.get('r1')), d1: p.get('d1') || '', d1e: p.get('d1e') || '', days1: num('days1'), p1: num('p1'),
+    r2: d(p.get('r2')), d2: p.get('d2') || '', d2e: p.get('d2e') || '', days2: num('days2'), p2: num('p2'),
+    dr: d(p.get('dr')), md: d(p.get('md')), drf: num('drf'),
+    hp: d(p.get('hp')), hpf: num('hpf'),
+    tip: num('tip'), lic: num('lic'), gov: num('gov'),
+    ga: num('ga'), gc: num('gc'), gf: num('gf'),
+    oth: num('oth'), othd: d(p.get('othd')),
+    fx: num('fx'), qn: d(p.get('qn')),
+  };
+
+  const sub1 = data.days1 * data.p1;
+  const sub2 = data.days2 * data.p2;
+  const usd = sub1 + sub2 + data.drf + data.hpf + data.tip + data.lic + data.gov + data.gf + data.oth;
+
+  // 驗證碼：n8n 端用相同算式
+  function computeChecksum() {
+    return (usd * 6271 + data.days1 * 7919 + data.days2 * 3571 + data.n.length * 2137 + Math.round(data.fx * 97)) % 100000;
+  }
+  const urlChecksum = p.get('v');
+  if (urlChecksum === null || urlChecksum === '') {
+    const banner = document.createElement('div');
+    banner.className = 'preview-banner';
+    banner.textContent = '⚠ 範本預覽模式（此頁未經驗證，不可作為正式報價）';
+    banner.style.cssText = 'width:180mm;background:#c0392b;color:#fff;text-align:center;padding:8px 0;font-size:13px;margin-bottom:12px;';
+    document.getElementById('doc').before(banner);
+  } else if (Number(urlChecksum) !== computeChecksum()) {
+    document.getElementById('doc').outerHTML =
+      '<div class="state-error">此報價連結無法驗證，可能已被竄改，請重新從系統取得連結。</div>';
+    document.getElementById('actions').style.display = 'none';
+    throw new Error('驗證失敗');
+  }
+
+  function fmtDate(str) {
+    if (!str) return '';
+    const dt = new Date(str + 'T00:00:00');
+    if (isNaN(dt)) return str;
+    return `${dt.getFullYear()}/${dt.getMonth() + 1}/${dt.getDate()}`;
+  }
+  function fmtRange(s, e) { return s ? (e ? `${fmtDate(s)} 至 ${fmtDate(e)}` : fmtDate(s)) : ''; }
+  function money(v) { return '$' + v.toLocaleString('en-US'); }
+
+  document.getElementById('clientName').textContent = data.n || '　　　　';
+  const today = new Date();
+  document.getElementById('quoteDate').textContent =
+    `報價日期：${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}`;
+
+  const ctName = data.ct ? `${data.ct} 月子中心` : '';
+
+  // 品項列：金額為 0 且無內容的列自動隱藏
+  const rows = [
+    { item: '待產房費', amt: sub1, show: sub1 > 0,
+      main: [ctName && data.r1 ? `${ctName}．${data.r1}` : (data.r1 || ctName),
+             data.d1 ? `${fmtRange(data.d1, data.d1e)}（${data.days1} 天 × ${money(data.p1)}）` : ''],
+      note: '暫定 34 週入境、39 週生產；若提早生產，未住到的待產天數會以 2 天折抵多坐 1 天月子。' },
+    { item: '月子房費', amt: sub2, show: sub2 > 0,
+      main: [ctName && data.r2 ? `${ctName}．${data.r2}` : (data.r2 || ctName),
+             data.d2 ? `${fmtRange(data.d2, data.d2e)}（${data.days2} 天 × ${money(data.p2)}）` : ''],
+      note: '建議月子天數先抓短，屆時可用提早生產未住的天數來補，要續住再追加，較為省錢。' },
+    { item: '醫生費', amt: data.drf, show: data.drf > 0 || data.dr !== '',
+      main: [[data.dr, data.md && `(${data.md})`].filter(Boolean).join(' ')],
+      note: '若醫師判定需做額外檢查，費用另計。' },
+    { item: '醫院費', amt: data.hpf, show: data.hpf > 0 || data.hp !== '',
+      main: [[data.hp, data.md && `(${data.md})`].filter(Boolean).join(' ')],
+      note: '' },
+    { item: '小費', amt: data.tip, show: data.tip > 0,
+      main: [`待產 ${data.days1} 天＋月子 ${data.days2} 天`],
+      note: '服務人員包括廚師、保母、司機和打掃阿姨，依實際服務天數給付即可（詳細標準列於合約中）。' },
+    { item: '證件代辦', amt: data.lic, show: data.lic > 0,
+      main: ['美國護照等證件服務費（最終費用以現場報價為主）'],
+      note: '寶寶大頭照可自行拍攝，若想找專業攝影師，費用約 $75。' },
+    { item: '政府規費', amt: data.gov, show: data.gov > 0,
+      main: ['美國護照＋出生證明＋認證費…等'],
+      note: '最終費用以現場公告為準。' },
+    { item: '陪客費', amt: data.gf, show: data.gf > 0 || data.ga > 0 || data.gc > 0,
+      main: [[data.ga ? `大人 ${data.ga} 位` : '', data.gc ? `小孩 ${data.gc} 位` : ''].filter(Boolean).join('・')],
+      note: '陪客費依實際入住天數計算，住幾天收幾天。' },
+    { item: '其他', amt: data.oth, show: data.oth > 0 || data.othd !== '',
+      main: [data.othd], note: '' },
+  ];
+
+  const tbody = document.getElementById('rows');
+  rows.filter(r => r.show).forEach(r => {
+    const tr = document.createElement('tr');
+    const main = r.main.filter(Boolean).map(t => `<div class="detail-main"></div>`);
+    tr.innerHTML = `<td class="item"></td><td></td><td class="fee"></td>`;
+    tr.children[0].textContent = r.item;
+    r.main.filter(Boolean).forEach(t => {
+      const div = document.createElement('div');
+      div.className = 'detail-main';
+      div.textContent = t;
+      tr.children[1].appendChild(div);
+    });
+    if (r.note) {
+      const nd = document.createElement('div');
+      nd.className = 'detail-note';
+      nd.textContent = r.note;
+      tr.children[1].appendChild(nd);
+    }
+    tr.children[2].textContent = money(r.amt);
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('totalUsd').textContent = money(usd);
+  if (data.fx > 0) {
+    document.getElementById('fxNote').textContent = `美元匯率 ${data.fx}`;
+    document.getElementById('totalTwd').textContent = 'NT' + money(Math.round(usd * data.fx));
+  } else {
+    document.getElementById('twdRow').style.display = 'none';
+  }
+
+  if (data.qn) {
+    const qn = document.getElementById('quoteNote');
+    qn.style.display = 'block';
+    qn.textContent = qn.textContent = data.qn;
+  }
+
+  // 浮水印：「（客戶名稱）專用」
+  window.addEventListener('load', () => {
+    const doc = document.getElementById('doc');
+    const layer = document.createElement('div');
+    layer.className = 'wm-layer';
+    const h = doc.scrollHeight;
+    const text = `${data.n || '　　　'}專用`;
+    for (let y = 100; y < h; y += 240) {
+      for (let col = 0; col < 2; col++) {
+        const tile = document.createElement('span');
+        tile.className = 'wm-tile';
+        tile.textContent = text;
+        tile.style.top = `${y + (col * 120)}px`;
+        tile.style.left = col === 0 ? '8%' : '48%';
+        layer.appendChild(tile);
+      }
+    }
+    doc.prepend(layer);
+  });
+
+  document.title = `費用報價單_${data.n || '未填姓名'}`;
+
+  function downloadPDF() {
+    const btn = document.querySelector('.download-btn');
+    btn.textContent = '產生中⋯';
+    btn.disabled = true;
+    const opt = {
+      margin: 0,
+      filename: `報價單_${data.n || '未填姓名'}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'] },
+    };
+    html2pdf().set(opt).from(document.getElementById('doc')).save().then(() => {
+      btn.textContent = '下載 PDF';
+      btn.disabled = false;
+    });
+  }
+</script>
+</body>
+</html>
