@@ -473,8 +473,8 @@
     addr: d(p.get('addr')), tel: d(p.get('tel')), em: d(p.get('em')),
     ga: p.get('ga') || '', gc: p.get('gc') || '',
     ecn: d(p.get('ecn')), ect: d(p.get('ect')),
-    d1: p.get('d1') || '', days1: num('days1'), r1: d(p.get('r1')), p1: num('p1'),
-    edd: p.get('edd') || '', d2: p.get('d2') || '', days2: num('days2'), r2: d(p.get('r2')), p2: num('p2'),
+    d1: p.get('d1') || '', d1e: p.get('d1e') || '', days1: num('days1'), r1: d(p.get('r1')), p1: num('p1'),
+    edd: p.get('edd') || '', d2: p.get('d2') || '', d2e: p.get('d2e') || '', days2: num('days2'), r2: d(p.get('r2')), p2: num('p2'),
     dep: num('dep'),
     img: d(p.get('img')),
     alg: d(p.get('alg')),
@@ -514,8 +514,14 @@
   const sub1 = data.days1 * data.p1;
   const sub2 = data.days2 * data.p2;
   const total = sub1 + sub2;
+  // 日期為區間時顯示「起 至 迄」
+  function fmtRange(start, end) {
+    if (!start) return '';
+    return end ? `${fmtDate(start)} 至 ${fmtDate(end)}` : fmtDate(start);
+  }
+
   const derived = {
-    d1x: fmtDate(data.d1), eddx: fmtDate(data.edd), d2x: fmtDate(data.d2),
+    d1x: fmtRange(data.d1, data.d1e), eddx: fmtDate(data.edd), d2x: fmtRange(data.d2, data.d2e),
     sub1: fmtMoney(sub1), sub2: fmtMoney(sub2), total: fmtMoney(total),
     first: fmtMoney(total > 0 ? Math.round(total * 0.9 - data.dep) : 0),
     second: fmtMoney(total > 0 ? Math.round(total * 0.1) : 0),
