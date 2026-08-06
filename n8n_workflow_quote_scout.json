@@ -1,0 +1,161 @@
+{
+  "name": "報價偵察兵（15 秒）",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds",
+              "secondsInterval": 15
+            }
+          ]
+        }
+      },
+      "name": "每 15 秒",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.notion.com/v1/databases/8e336258-2838-4151-b150-25517ce33a5b/query",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"filter\": {\"property\": \"產生報價單\", \"checkbox\": {\"equals\": true}}}",
+        "options": {}
+      },
+      "name": "查打勾的列",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 防重複：10 秒內認領過的頁面不再送\nconst sd = $getWorkflowStaticData('global');\nsd.claimed = sd.claimed || {};\nconst now = Date.now();\nfor (const k of Object.keys(sd.claimed)) if (now - sd.claimed[k] > 10000) delete sd.claimed[k];\nconst res = $input.first().json.results || [];\nconst out = [];\nfor (const pg of res) {\n  if (sd.claimed[pg.id]) continue;\n  sd.claimed[pg.id] = now;\n  out.push({ json: { id: pg.id } });\n}\nreturn out;"
+      },
+      "name": "攤平",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.notion.com/v1/pages/{{ $json.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"properties\": {\"產生報價單\": {\"checkbox\": false}}}",
+        "options": {}
+      },
+      "name": "先收勾（防重複）",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n-miyavi.zeabur.app/webhook/quote-generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ data: { id: $json.id } }) }}",
+        "options": {}
+      },
+      "name": "叫醒主力",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "每 15 秒": {
+      "main": [
+        [
+          {
+            "node": "查打勾的列",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查打勾的列": {
+      "main": [
+        [
+          {
+            "node": "攤平",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "攤平": {
+      "main": [
+        [
+          {
+            "node": "先收勾（防重複）",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "先收勾（防重複）": {
+      "main": [
+        [
+          {
+            "node": "叫醒主力",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  }
+}

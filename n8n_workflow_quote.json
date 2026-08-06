@@ -1,0 +1,284 @@
+{
+  "name": "Notion 報價單產生器",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "quote-generate",
+        "options": {}
+      },
+      "webhookId": "fd59c363-c49c-4a49-9167-2efb1cb8aad2",
+      "name": "報價 Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.notion.com/v1/pages/{{ $json.body?.data?.id || $json.body?.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "抓頁面資料",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 讀報價單頁面（公式/rollup 皆為 Notion 已算好的值），組報價網址\nconst BASE = 'https://smallwins33.github.io/contract-generator/';\nconst out = [];\nfor (const item of $input.all()) {\n  const page = item.json;\n  const p = page.properties;\n  if (!p) continue;\n  const t = rt => (rt || []).map(x => x.plain_text).join('');\n  const f = x => x?.formula?.number ?? 0;\n  const fs = x => x?.formula?.string ?? '';\n  const roll = x => x?.rollup?.number ?? 0;\n  const rollT = x => {\n    const first = (x?.rollup?.array || [])[0] || {};\n    return ((first.title || first.rich_text) || []).map(y => y.plain_text).join('');\n  };\n  const date = x => x?.date?.start || '';\n  const dateEnd = x => x?.date?.end || '';\n\n  const check = fs(p['⚠️檢查']);\n  if (check.includes('🚨')) throw new Error('報價設定不完整，未生成：' + check);\n\n  const name = t(p['客戶姓名']?.title);\n  const days1 = f(p['待產天數']), days2 = f(p['月子天數']);\n  const p1 = roll(p['單價待產/日']), p2 = roll(p['單價月子/日']);\n  const drf = f(p['醫生費用']), hpf = f(p['醫院費用']);\n  const tip = f(p['小費']), gf = f(p['陪客費']);\n  const lic = roll(p['設定證件代辦']), gov = roll(p['設定政府規費']), fx = roll(p['設定匯率']);\n  const oth = p['其他費用']?.number ?? 0;\n  const ga = p['陪客大人人數']?.number ?? 0, gc = p['陪客小孩人數']?.number ?? 0;\n\n  const usd = days1*p1 + days2*p2 + drf + hpf + tip + lic + gov + gf + oth;\n  const theirUsd = f(p['💰總計美元']);\n  if (theirUsd && Math.abs(theirUsd - usd) > 1)\n    throw new Error(`總計驗算不符（Notion=${theirUsd}，模板算式=${usd}），未生成，請回報`);\n\n  const v = (usd*6271 + days1*7919 + days2*3571 + name.length*2137 + Math.round(fx*97)) % 100000;\n  const qobj = { n:name, ct:rollT(p['名稱月子中心']), md:p['生產方式']?.select?.name || '',\n    r1:rollT(p['名稱待產房型']), d1:date(p['待產期間']), d1e:dateEnd(p['待產期間']), days1, p1,\n    r2:rollT(p['名稱月子房型']), d2:date(p['月子期間']), d2e:dateEnd(p['月子期間']), days2, p2,\n    dr:rollT(p['名稱醫生']), drf, hp:rollT(p['名稱醫院']), hpf,\n    tip, lic, gov, ga, gc, gf, oth, fx, v };\n  const qs = Object.entries(qobj).map(([k,val]) => k+'='+encodeURIComponent(String(val ?? ''))).join('&');\n  out.push({ json: { pageId: page.id, url: BASE+'quote.html?'+qs, filename: `報價單_${name||'未命名'}.pdf` } });\n}\nreturn out;"
+      },
+      "name": "組報價網址",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.notion.com/v1/file_uploads",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ mode: 'single_part', filename: $json.filename, content_type: 'application/pdf' }) }}",
+        "options": {}
+      },
+      "name": "建立檔案上傳",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://demo.gotenberg.dev/forms/chromium/convert/url",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "={{ $('組報價網址').item.json.url }}"
+            },
+            {
+              "name": "printBackground",
+              "value": "true"
+            },
+            {
+              "name": "paperWidth",
+              "value": "8.27"
+            },
+            {
+              "name": "paperHeight",
+              "value": "11.69"
+            },
+            {
+              "name": "marginTop",
+              "value": "0"
+            },
+            {
+              "name": "marginBottom",
+              "value": "0"
+            },
+            {
+              "name": "marginLeft",
+              "value": "0"
+            },
+            {
+              "name": "marginRight",
+              "value": "0"
+            },
+            {
+              "name": "waitDelay",
+              "value": "3s"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          }
+        }
+      },
+      "name": "轉成 PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.notion.com/v1/file_uploads/{{ $('建立檔案上傳').item.json.id }}/send",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "file",
+              "parameterType": "formBinaryData",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "上傳 PDF 到 Notion",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.notion.com/v1/pages/{{ $('組報價網址').item.json.pageId }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ properties: { '報價單 PDF': { files: [ { type: 'file_upload', file_upload: { id: $('上傳 PDF 到 Notion').item.json.id }, name: $('組報價網址').item.json.filename } ] }, '產生報價單': { checkbox: false }, '報價狀態': { select: { name: '已產生' } } } }) }}",
+        "options": {}
+      },
+      "name": "回寫 Notion 頁面",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "報價 Webhook": {
+      "main": [
+        [
+          {
+            "node": "抓頁面資料",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "抓頁面資料": {
+      "main": [
+        [
+          {
+            "node": "組報價網址",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "組報價網址": {
+      "main": [
+        [
+          {
+            "node": "建立檔案上傳",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "建立檔案上傳": {
+      "main": [
+        [
+          {
+            "node": "轉成 PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "轉成 PDF": {
+      "main": [
+        [
+          {
+            "node": "上傳 PDF 到 Notion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "上傳 PDF 到 Notion": {
+      "main": [
+        [
+          {
+            "node": "回寫 Notion 頁面",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  }
+}
