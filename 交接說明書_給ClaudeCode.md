@@ -113,6 +113,48 @@ Repo：`https://github.com/smallwins33/contract-generator`（raw 檔案可直接
 
 ---
 
+## 五-b、自架 Gotenberg 實際步驟（正式上線前必做）
+
+Gotenberg 是開源的「HTML 轉 PDF 引擎」（內建無頭 Chrome），官方 Docker 映像檔：`gotenberg/gotenberg:8`。不用任何設定檔，開起來就能用。
+
+### 情境 A：n8n 跑在 Zeabur（原環境的情境）
+
+1. 進 n8n 所在的 Zeabur 專案 → **Add Service** → 選 Docker Image → 填 `gotenberg/gotenberg:8` → 部署（它聽 port 3000）
+2. **優先用專案內部網路**：同專案的服務可以用私有網路互連（主機名通常是服務名稱，例如 `gotenberg.zeabur.internal:3000`，依 Zeabur 介面顯示為準）——這樣 Gotenberg 完全不對外公開，最安全
+3. 若私有網路不可用，退而求其次綁一個公開網域——但要知道：**Gotenberg 本身沒有密碼保護**，公開網址等於任何人都能用你的機器轉檔（資安風險低、但有被濫用吃資源的帳單風險），建議網域取隨機難猜的名稱
+4. 到 n8n 兩條主力 workflow 的「轉成 PDF」節點，把網址從
+   `https://demo.gotenberg.dev/forms/chromium/convert/url`
+   改成
+   `http://（內部主機名）:3000/forms/chromium/convert/url`
+
+### 情境 B：n8n 用 docker-compose 自架
+
+```yaml
+services:
+  n8n:
+    image: n8nio/n8n
+    # ...原有設定...
+  gotenberg:
+    image: gotenberg/gotenberg:8
+```
+
+n8n 裡的網址填 `http://gotenberg:3000/forms/chromium/convert/url`（compose 服務名即主機名）。
+
+### 驗證
+
+用 n8n 手動執行一次主力 workflow（或 curl 打 Gotenberg）：
+
+```bash
+curl -X POST "http://<主機>:3000/forms/chromium/convert/url" \
+  -F url=https://<你的 Pages 網址>/contract.html -F printBackground=true \
+  -o test.pdf
+# test.pdf 開得起來、file test.pdf 顯示 "PDF document" 即通
+```
+
+注意：Gotenberg 要能連外（它得打開 GitHub Pages 的模板網址），自架環境如有防火牆要放行對外流量。
+
+---
+
 ## 六、驗收清單（全過才算建置完成）
 
 - [ ] 合約：填假資料＋上傳一張圖到證件照 → 按按鈕 → 30 秒內「合約 PDF」出現、勾自動取消、狀態=已產生
